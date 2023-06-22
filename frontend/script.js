@@ -14,7 +14,7 @@ document.getElementById("rangeForm").addEventListener("submit", function(event) 
     };
   
     // Make a POST request to the backend
-    fetch("http://localhost:3000/save-range", {
+    fetch("https://ranges-fullstack.vercel.app/save-range", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
