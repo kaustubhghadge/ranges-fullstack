@@ -68,7 +68,7 @@ app.post('/save-range', async (req, res) => {
     // Save the range document to the database
     await newRange.save();
 
-    res.json({ success: true });
+    res.json({ success: true, data:{ascendingRange, descendingRange} });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
