@@ -14,7 +14,7 @@ document.getElementById("rangeForm").addEventListener("submit", function(event) 
     };
   
     // Make a POST request to the backend
-    fetch("https://ranges-fullstack.vercel.app/save-range", {
+    fetch("http://localhost:3000/save-range", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -24,6 +24,23 @@ document.getElementById("rangeForm").addEventListener("submit", function(event) 
       .then(response => response.json())
       .then(data => {
         if (data.success) {
+          // Generate the table HTML for the resulting ranges
+      const tableHTML = `
+      <table>
+        <tr>
+          <th>Ascending Order Range</th>
+          <th>Descending Order Range</th>
+        </tr>
+        <tr>
+          <td>${data.data.ascendingRange.join(', ')}</td>
+          <td>${data.data.descendingRange.join(', ')}</td>
+        </tr>
+      </table>
+    `;
+
+    // Display the resulting ranges in a table
+    const resultTableElement = document.getElementById('result-table');
+    resultTableElement.innerHTML = tableHTML;
           alert("Range saved successfully!");
         } else {
           alert("Error saving range: " + data.error);
