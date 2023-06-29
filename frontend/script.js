@@ -46,7 +46,7 @@ const saveRanges = async () => {
   });
 
   try {
-    const response = await fetch('http://localhost:3000/save-range', {
+    const response = await fetch('https://ranges-fullstack.vercel.app/save-range', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
