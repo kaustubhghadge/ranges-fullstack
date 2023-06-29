@@ -145,7 +145,7 @@ const updatePairsTable = (pairs) => {
 
 const fetchPairs = async () => {
   try {
-    const response = await fetch('http://localhost:3000/get-ranges');
+    const response = await fetch('https://ranges-fullstack.vercel.app/get-ranges');
     const data = await response.json();
 
     if (response.ok) {
