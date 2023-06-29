@@ -87,6 +87,7 @@
   input {
     padding: 5px;
     width: 200px;
+    margin-right:20px;
   }
   
   button {
