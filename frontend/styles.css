@@ -103,40 +103,29 @@
   }
   
   #pairs-table {
-    margin-bottom: 20px;
     border-collapse: collapse;
     width: 100%;
+    margin-bottom: 20px;
   }
   
   #pairs-table th,
   #pairs-table td {
     padding: 8px;
-    border-bottom: 1px solid #ddd;
     text-align: center;
+    border: 1px solid black;
   }
   
   #pairs-table th {
-    background-color: #4CAF50;
-    color: white;
+    background-color: #f2f2f2;
   }
   
   .pair-header {
     font-weight: bold;
   }
   
-  .range-list {
-    display: flex;
-    flex-direction: column;
-    list-style-type: none;
-    padding: 10px;
+  .highlighted {
+    font-weight: bold;
   }
   
-  .range-list li {
-    margin-bottom: 5px;
-  }
-  
-  .separator {
-    width: 100%;
-    margin-bottom: 10px;
-  }
+  /* Add your own styles for highlighted cells here */
   
