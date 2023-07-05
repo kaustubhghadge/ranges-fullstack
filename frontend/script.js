@@ -136,4 +136,4 @@ const fetchPairs = async () => {
   }
 };
 
-fetchPairs();
+//fetchPairs();
