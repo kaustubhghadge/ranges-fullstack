@@ -14,20 +14,11 @@ const addPair = () => {
   secondNumberInput.classList.add('second-number');
   secondNumberInput.placeholder = 'Second Number';
 
-  const nValueInput = document.createElement('input');
-  nValueInput.type = 'number';
-  nValueInput.classList.add('n-value');
-  nValueInput.placeholder = 'n Value';
-
   pairDiv.appendChild(firstNumberInput);
   pairDiv.appendChild(secondNumberInput);
-  pairDiv.appendChild(nValueInput);
-  
 
   pairsContainer.appendChild(pairDiv);
 };
-
-
 
 const saveRanges = async () => {
   const pairs = [];
@@ -36,13 +27,11 @@ const saveRanges = async () => {
   pairDivs.forEach((pairDiv) => {
     const firstNumberInput = pairDiv.querySelector('.first-number');
     const secondNumberInput = pairDiv.querySelector('.second-number');
-    const nValueInput = pairDiv.querySelector('.n-value');
 
     const firstNumber = parseFloat(firstNumberInput.value);
     const secondNumber = parseFloat(secondNumberInput.value);
-    const nValue = parseInt(nValueInput.value);
 
-    pairs.push({ firstNumber, secondNumber, nValue });
+    pairs.push({ firstNumber, secondNumber });
   });
 
   try {
@@ -51,7 +40,7 @@ const saveRanges = async () => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ pairs })
+      body: JSON.stringify(pairs)
     });
 
     if (response.ok) {
@@ -76,97 +65,54 @@ const updatePairsTable = (pairs) => {
 
   // Create table header row
   const headerRow = document.createElement('tr');
-  headerRow.innerHTML = `
-    <th colspan="2">Pair 1 [${pairs[0].firstNumber}, ${pairs[0].secondNumber}]</th>
-    <th colspan="2">Pair 2 [${pairs[1].firstNumber}, ${pairs[1].secondNumber}]</th>
-  `;
+  pairs.forEach((pair, index) => {
+    const pairHeader = document.createElement('th');
+    pairHeader.colSpan = 2;
+    pairHeader.textContent = `Pair ${index + 1} [${pair.firstNumber}, ${pair.secondNumber}]`;
+    headerRow.appendChild(pairHeader);
+  });
   pairsTable.appendChild(headerRow);
 
   // Create sub-header row for ascending and descending order
   const subHeaderRow = document.createElement('tr');
-  subHeaderRow.innerHTML = `
-    <th>Ascending Order</th>
-    <th>Descending Order</th>
-    <th>Ascending Order</th>
-    <th>Descending Order</th>
-  `;
+  pairs.forEach(() => {
+    const ascendingHeader = document.createElement('th');
+    ascendingHeader.textContent = 'Ascending Order';
+    subHeaderRow.appendChild(ascendingHeader);
+
+    const descendingHeader = document.createElement('th');
+    descendingHeader.textContent = 'Descending Order';
+    subHeaderRow.appendChild(descendingHeader);
+  });
   pairsTable.appendChild(subHeaderRow);
 
   // Create table body
   const pairsTableBody = document.createElement('tbody');
 
-  const maxRowCount = Math.max(
-    pairs[0].ascendingRange.length,
-    pairs[0].descendingRange.length,
-    pairs[1].ascendingRange.length,
-    pairs[1].descendingRange.length
-  );
+  const maxRowCount = pairs.reduce((max, pair) => {
+    return Math.max(max, pair.ascendingRange.length, pair.descendingRange.length);
+  }, 0);
 
   for (let i = 0; i < maxRowCount; i++) {
     const row = document.createElement('tr');
 
-    // Pair 1 Ascending Range
-    const pair1AscendingValue = pairs[0].ascendingRange[i] || '';
-    const pair1AscendingCell = document.createElement('td');
-    pair1AscendingCell.textContent = pair1AscendingValue;
-    if (isSimilarNumber(pair1AscendingValue, pairs[1])) {
-      pair1AscendingCell.style.backgroundColor = getRandomColor();
-    }
-    row.appendChild(pair1AscendingCell);
+    pairs.forEach((pair) => {
+      const pairAscendingValue = pair.ascendingRange[i] !== undefined ? pair.ascendingRange[i] : 0;
+const pairAscendingCell = document.createElement('td');
+pairAscendingCell.textContent = pairAscendingValue;
+row.appendChild(pairAscendingCell);
 
-    // Pair 1 Descending Range
-    const pair1DescendingValue = pairs[0].descendingRange[i] || '';
-    const pair1DescendingCell = document.createElement('td');
-    pair1DescendingCell.textContent = pair1DescendingValue;
-    if (isSimilarNumber(pair1DescendingValue, pairs[1])) {
-      pair1DescendingCell.style.backgroundColor = getRandomColor();
-    }
-    row.appendChild(pair1DescendingCell);
-
-    // Pair 2 Ascending Range
-    const pair2AscendingValue = pairs[1].ascendingRange[i] || '';
-    const pair2AscendingCell = document.createElement('td');
-    pair2AscendingCell.textContent = pair2AscendingValue;
-    if (isSimilarNumber(pair2AscendingValue, pairs[0])) {
-      pair2AscendingCell.style.backgroundColor = getRandomColor();
-    }
-    row.appendChild(pair2AscendingCell);
-
-    // Pair 2 Descending Range
-    const pair2DescendingValue = pairs[1].descendingRange[i] || '';
-    const pair2DescendingCell = document.createElement('td');
-    pair2DescendingCell.textContent = pair2DescendingValue;
-    if (isSimilarNumber(pair2DescendingValue, pairs[0])) {
-      pair2DescendingCell.style.backgroundColor = getRandomColor();
-    }
-    row.appendChild(pair2DescendingCell);
+const pairDescendingValue = pair.descendingRange[i] !== undefined ? pair.descendingRange[i] : 0;
+const pairDescendingCell = document.createElement('td');
+pairDescendingCell.textContent = pairDescendingValue;
+row.appendChild(pairDescendingCell);
+    });
 
     pairsTableBody.appendChild(row);
   }
 
   pairsTable.appendChild(pairsTableBody);
 };
-
-// Helper function to check if a number exists in the given pair's ranges
-const isSimilarNumber = (number, pair) => {
-  const { ascendingRange, descendingRange } = pair;
-  return (
-    (typeof number === 'number' && ascendingRange.includes(number)) ||
-    (typeof number === 'number' && descendingRange.includes(number))
-  );
-};
-
-// Helper function to generate a random color
-const getRandomColor = () => {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-};
-
-
 
 const fetchPairs = async () => {
   try {
@@ -177,14 +123,11 @@ const fetchPairs = async () => {
       const pairs = data.ranges;
       console.log(pairs);
 
-      if (Array.isArray(pairs) && pairs.length<=0){
-        document.getElementById('message').textContent = "No pairs retrieved from DB"
-      }
-      else{
+      if (Array.isArray(pairs) && pairs.length <= 0) {
+        document.getElementById('message').textContent = "No pairs retrieved from DB";
+      } else {
         updatePairsTable(pairs);
       }
-      
-     
     } else {
       console.log('Error fetching pairs');
     }
@@ -193,6 +136,4 @@ const fetchPairs = async () => {
   }
 };
 
-//fetchPairs();
-
-  
+fetchPairs();
