@@ -211,7 +211,7 @@ const fetchPairs = async () => {
 
     if (response.ok) {
       const pairs = data.ranges;
-      console.log(pairs);
+      console.log(data);
 
       const messageElement = document.getElementById('message');
 

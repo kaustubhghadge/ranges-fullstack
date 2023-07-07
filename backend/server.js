@@ -117,12 +117,68 @@ app.get('/get-ranges', async (req, res) => {
     if (!range || range.length === 0) {
       return res.json({ ranges: [] });
     }
-    res.json({ranges: range[0].pairs});
+    const repeatedValues = findRepeatedValues({ranges: range[0].pairs});
+    res.json({ranges: range[0].pairs, repeatedValues});
   } catch (error) {
     res.status(500).json({ error: 'Error fetching ranges' });
   }
 });
 
+function findRepeatedValues(data) {
+  const repeatedValues = [];
+
+  for (let i = 0; i < data.ranges.length; i++) {
+    const currentRange = data.ranges[i];
+
+    for (let j = i + 1; j < data.ranges.length; j++) {
+      const comparedRange = data.ranges[j];
+
+      const repeatedAscending = currentRange.ascendingRange.filter(currentObj =>
+        comparedRange.ascendingRange.some(comparedObj =>
+          comparedObj.value === currentObj.value
+        )
+      );
+
+      const repeatedDescending = currentRange.descendingRange.filter(currentObj =>
+        comparedRange.descendingRange.some(comparedObj =>
+          comparedObj.value === currentObj.value
+        )
+      );
+
+      if (repeatedAscending.length > 0 || repeatedDescending.length > 0) {
+        const repeatedInfo = {
+          repeatedValues: [],
+          pairs: []
+        };
+
+        for (const valueObj of repeatedAscending) {
+          repeatedInfo.repeatedValues.push({ index:valueObj.index, value: valueObj.value });
+        }
+
+        for (const valueObj of repeatedDescending) {
+          repeatedInfo.repeatedValues.push({ index:valueObj.index, value: valueObj.value });
+        }
+
+        const pair1 = {
+          name: currentRange.pairName,
+          numbers: `${currentRange.firstNumber}, ${currentRange.secondNumber}`
+        };
+
+        const pair2 = {
+          name: comparedRange.pairName,
+          numbers: `${comparedRange.firstNumber}, ${comparedRange.secondNumber}`
+        };
+
+        repeatedInfo.pairs.push(pair1);
+        repeatedInfo.pairs.push(pair2);
+
+        repeatedValues.push(repeatedInfo);
+      }
+    }
+  }
+
+  return repeatedValues;
+}
 
 // Start the server
 const port = process.env.PORT || 3000;
