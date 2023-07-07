@@ -11,69 +11,75 @@ mongoose.connect('mongodb+srv://kaustubhghadge:yY7OGipjkNPwJkMX@cluster0.ty55w9c
 const db = mongoose.connection;
 
 // Define a schema for the pairs and ranges
+// Define a schema for the pairs and ranges
 const rangeSchema = new mongoose.Schema({
-  date: { type: Date, default: Date.now },
+  timestamp: { type: Date, default: Date.now },
   pairs: [
     {
-      pair: { type: Number },
+      pairName: { type: String },
       firstNumber: { type: Number },
       secondNumber: { type: Number },
-      ascendingRange: [{ type: Number }],
-      descendingRange: [{ type: Number }]
+      ascendingRange: [
+        {
+          index: { type: Number },
+          value: { type: Number }
+        }
+      ],
+      descendingRange: [
+        {
+          index: { type: Number },
+          value: { type: Number }
+        }
+      ]
     }
   ]
-}); 
-  // Create a model based on the schema
-  const Range = mongoose.model('Range', rangeSchema);
+});
+// Create a model based on the schema
+const Range = mongoose.model('Range', rangeSchema);
 
 // Endpoint to save the range
 app.post('/save-range', async (req, res) => {
   try {
-    const rangeData = req.body; 
-  
+    const rangeData = req.body;
+
+    if (!rangeData || rangeData.length === 0) {
+      return res.status(400).json({ success: false, error: 'Range data is missing' });
+    }
+
     const savedPairs = [];
 
-    rangeData.forEach((rangeItem, index) => {
-      const { firstNumber, secondNumber } = rangeItem;
-     
-      // Determine the largest and smallest numbers
+    for (const rangeItem of rangeData) {
+      const { pairName, firstNumber, secondNumber } = rangeItem;
+
+      if (pairName === null || firstNumber === null || secondNumber === null) {
+        return res.status(400).json({ success: false, error: 'Invalid range data' });
+      }
+
       const x = Math.max(firstNumber, secondNumber);
       const y = Math.min(firstNumber, secondNumber);
 
-      // Calculate the SD
       const SD = x - y;
-      const numValues = 100; // Number of values to generate
+      const numValues = 100;
 
-      // Generate the ascending range array
       const ascendingRange = [];
-      for (let i = 1; i <= numValues; i++) {
-        ascendingRange.push(x + i * SD);
-      }
-
-      // Generate the descending range array
       const descendingRange = [];
+
       for (let i = 1; i <= numValues; i++) {
-        descendingRange.push(y - i * SD);
+        ascendingRange.push({ index: i, value: x + i * SD });
+        descendingRange.push({ index: i, value: y - i * SD });
       }
 
-      // Create a new range document
-      const newRange = new Range({
-        pairs: [
-          {
-            pair: index + 1,
-            firstNumber: firstNumber,
-            secondNumber: secondNumber,
-            ascendingRange: ascendingRange,
-            descendingRange: descendingRange
-          }
-        ]
+      savedPairs.push({
+        pairName: pairName,
+        firstNumber: firstNumber,
+        secondNumber: secondNumber,
+        ascendingRange: ascendingRange,
+        descendingRange: descendingRange
       });
+    }
 
-      savedPairs.push(newRange);
-    });
-
-    // Save the range documents to the database
-    await Range.insertMany(savedPairs);
+    const newRange = new Range({ pairs: savedPairs });
+    await newRange.save();
 
     res.json({ success: true });
   } catch (error) {
@@ -81,34 +87,42 @@ app.post('/save-range', async (req, res) => {
   }
 });
 
+
 app.get('/get-ranges', async (req, res) => {
   try {
-    const numValuesToRetrieve = 10; // Number of values to retrieve for each pair
+    const numValuesToRetrieve = 10;
 
     const range = await Range.aggregate([
-      { $unwind: "$pairs" },
-      { $sort: { date: -1 } }, // Sort by date in descending order
+      { $sort: { timestamp: -1 } }, // Sort by timestamp in descending order
+      { $limit: 1 }, // Retrieve only the latest Range document
       {
         $project: {
-          pair: "$pairs.pair",
-          firstNumber: "$pairs.firstNumber",
-          secondNumber: "$pairs.secondNumber",
-          ascendingRange: { $slice: ["$pairs.ascendingRange", numValuesToRetrieve] },
-          descendingRange: { $slice: ["$pairs.descendingRange", numValuesToRetrieve] }
+          pairs: {
+            $map: {
+              input: "$pairs",
+              as: "pair",
+              in: {
+                pairName: "$$pair.pairName",
+                firstNumber: "$$pair.firstNumber",
+                secondNumber: "$$pair.secondNumber",
+                ascendingRange: { $slice: ["$$pair.ascendingRange", numValuesToRetrieve] },
+                descendingRange: { $slice: ["$$pair.descendingRange", numValuesToRetrieve] }
+              }
+            }
+          }
         }
       }
-    ]).exec();
-    
+    ]);
 
     if (!range || range.length === 0) {
       return res.json({ ranges: [] });
     }
-
-    res.json({ ranges: range });
+    res.json({ranges: range[0].pairs});
   } catch (error) {
     res.status(500).json({ error: 'Error fetching ranges' });
   }
 });
+
 
 // Start the server
 const port = process.env.PORT || 3000;

@@ -1,8 +1,17 @@
+//http://localhost:3000/
+//https://ranges-fullstack.vercel.app
+
+
 const addPair = () => {
   const pairsContainer = document.getElementById('pairs-container');
 
   const pairDiv = document.createElement('div');
-  pairDiv.classList.add('pair');
+  pairDiv.classList.add('pair'); // Set the class for pairDiv
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.classList.add('name');
+  nameInput.placeholder = 'Name';
 
   const firstNumberInput = document.createElement('input');
   firstNumberInput.type = 'number';
@@ -14,10 +23,25 @@ const addPair = () => {
   secondNumberInput.classList.add('second-number');
   secondNumberInput.placeholder = 'Second Number';
 
+  const removeButton = document.createElement('button');
+  removeButton.classList.add('remove-pair');
+  removeButton.innerHTML = 'Clear';
+
+  removeButton.addEventListener('click', () => {
+    pairDiv.remove();
+  });
+
+  pairDiv.appendChild(nameInput);
   pairDiv.appendChild(firstNumberInput);
   pairDiv.appendChild(secondNumberInput);
+  pairDiv.appendChild(removeButton);
 
   pairsContainer.appendChild(pairDiv);
+};
+
+
+const removePair = (pairDiv) => {
+  pairDiv.remove();
 };
 
 const saveRanges = async () => {
@@ -25,93 +49,159 @@ const saveRanges = async () => {
 
   const pairDivs = document.querySelectorAll('.pair');
   pairDivs.forEach((pairDiv) => {
+    const nameInput = pairDiv.querySelector('.name');
     const firstNumberInput = pairDiv.querySelector('.first-number');
     const secondNumberInput = pairDiv.querySelector('.second-number');
 
+    const pairName = nameInput.value.trim();
     const firstNumber = parseFloat(firstNumberInput.value);
     const secondNumber = parseFloat(secondNumberInput.value);
 
-    pairs.push({ firstNumber, secondNumber });
+    if (pairName !== '' && !isNaN(firstNumber) && !isNaN(secondNumber)) {
+      pairs.push({ pairName, firstNumber, secondNumber });
+    }
   });
 
-  try {
-    const response = await fetch('https://ranges-fullstack.vercel.app/save-range', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(pairs)
-    });
+  if (pairs.length > 0) {
+    try {
+      const response = await fetch('https://ranges-fullstack.vercel.app/save-range', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(pairs)
+      });
 
-    if (response.ok) {
-      console.log('Ranges saved successfully');
-      fetchPairs();
-    } else {
-      console.log('Error saving ranges');
+      if (response.ok) {
+        console.log('Ranges saved successfully');
+        fetchPairs();
+        showSuccessMessage('Ranges saved successfully!');
+
+        // Remove dynamically created HTML elements
+        const pairsContainer = document.getElementById('pairs-container');
+        pairsContainer.innerHTML = '';
+
+        // Clear input boxes
+        const inputBoxes = document.querySelectorAll('input');
+        inputBoxes.forEach((input) => {
+          input.value = '';
+        });
+      } else {
+        console.log('Error saving ranges');
+        showErrorMessage('Error saving ranges. Please try again.');
+      }
+    } catch (error) {
+      console.log('Error:', error.message);
+      showErrorMessage('An error occurred. Please try again later.');
     }
-  } catch (error) {
-    console.log('Error:', error.message);
+  } else {
+    showErrorMessage('Please enter valid pair values.');
   }
 };
+
+
+const showSuccessMessage = (message) => {
+  const messageElement = document.getElementById('message');
+  messageElement.classList.add('alert', 'alert-success');
+  messageElement.textContent = message;
+};
+
+const showErrorMessage = (message) => {
+  const messageElement = document.getElementById('message');
+  messageElement.classList.add('alert', 'alert-danger');
+  messageElement.textContent = message;
+};
+
 
 document.getElementById('add-pair').addEventListener('click', addPair);
 document.getElementById('save-ranges').addEventListener('click', saveRanges);
 
-const updatePairsTable = (pairs) => {
-  const pairsTable = document.querySelector('#pairs-table');
+const createTables = (pairs) => {
+  const tableContainer = document.getElementById('pairs-table-container');
+  tableContainer.innerHTML = '';
 
-  // Clear existing table
-  pairsTable.innerHTML = '';
+  const maxPairsPerRow = 4;
+  let currentRow;
 
-  // Create table header row
-  const headerRow = document.createElement('tr');
   pairs.forEach((pair, index) => {
+    if (index % maxPairsPerRow === 0) {
+      currentRow = document.createElement('div');
+      currentRow.classList.add('row');
+      tableContainer.appendChild(currentRow);
+    }
+
+    const col = document.createElement('div');
+    col.classList.add('col');
+
+    const table = document.createElement('table');
+    table.classList.add('table', 'table-bordered');
+
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
     const pairHeader = document.createElement('th');
-    pairHeader.colSpan = 2;
-    pairHeader.textContent = `Pair ${index + 1} [${pair.firstNumber}, ${pair.secondNumber}]`;
+    pairHeader.colSpan = 4;
+    pairHeader.textContent = `${pair.pairName} [${pair.firstNumber}, ${pair.secondNumber}]`;
     headerRow.appendChild(pairHeader);
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    const subHeaderRow = document.createElement('tr');
+
+    const ascendingSubheader = document.createElement('th');
+    ascendingSubheader.colSpan = 2;
+    ascendingSubheader.textContent = 'Ascending Order';
+    subHeaderRow.appendChild(ascendingSubheader);
+
+    const descendingSubheader = document.createElement('th');
+    descendingSubheader.colSpan = 2;
+    descendingSubheader.textContent = 'Descending Order';
+    subHeaderRow.appendChild(descendingSubheader);
+
+    tbody.appendChild(subHeaderRow);
+
+    const ascendingRange = pair.ascendingRange;
+    const descendingRange = pair.descendingRange;
+    const rowCount = Math.max(ascendingRange.length, descendingRange.length);
+
+    for (let i = 0; i < rowCount; i++) {
+      const row = document.createElement('tr');
+
+      const ascendingIndexCell = document.createElement('td');
+      ascendingIndexCell.classList.add('index-cell');
+      if (i < ascendingRange.length) {
+        ascendingIndexCell.textContent = ascendingRange[i].index;
+      }
+      row.appendChild(ascendingIndexCell);
+
+      const ascendingValueCell = document.createElement('td');
+      ascendingValueCell.classList.add('value-cell');
+      if (i < ascendingRange.length) {
+        ascendingValueCell.textContent = ascendingRange[i].value;
+      }
+      row.appendChild(ascendingValueCell);
+
+      const descendingIndexCell = document.createElement('td');
+      descendingIndexCell.classList.add('index-cell');
+      if (i < descendingRange.length) {
+        descendingIndexCell.textContent = descendingRange[i].index;
+      }
+      row.appendChild(descendingIndexCell);
+
+      const descendingValueCell = document.createElement('td');
+      descendingValueCell.classList.add('value-cell');
+      if (i < descendingRange.length) {
+        descendingValueCell.textContent = descendingRange[i].value;
+      }
+      row.appendChild(descendingValueCell);
+
+      tbody.appendChild(row);
+    }
+
+    table.appendChild(tbody);
+    col.appendChild(table);
+    currentRow.appendChild(col);
   });
-  pairsTable.appendChild(headerRow);
-
-  // Create sub-header row for ascending and descending order
-  const subHeaderRow = document.createElement('tr');
-  pairs.forEach(() => {
-    const ascendingHeader = document.createElement('th');
-    ascendingHeader.textContent = 'Ascending Order';
-    subHeaderRow.appendChild(ascendingHeader);
-
-    const descendingHeader = document.createElement('th');
-    descendingHeader.textContent = 'Descending Order';
-    subHeaderRow.appendChild(descendingHeader);
-  });
-  pairsTable.appendChild(subHeaderRow);
-
-  // Create table body
-  const pairsTableBody = document.createElement('tbody');
-
-  const maxRowCount = pairs.reduce((max, pair) => {
-    return Math.max(max, pair.ascendingRange.length, pair.descendingRange.length);
-  }, 0);
-
-  for (let i = 0; i < maxRowCount; i++) {
-    const row = document.createElement('tr');
-
-    pairs.forEach((pair) => {
-      const pairAscendingValue = pair.ascendingRange[i] !== undefined ? pair.ascendingRange[i] : 0;
-const pairAscendingCell = document.createElement('td');
-pairAscendingCell.textContent = pairAscendingValue;
-row.appendChild(pairAscendingCell);
-
-const pairDescendingValue = pair.descendingRange[i] !== undefined ? pair.descendingRange[i] : 0;
-const pairDescendingCell = document.createElement('td');
-pairDescendingCell.textContent = pairDescendingValue;
-row.appendChild(pairDescendingCell);
-    });
-
-    pairsTableBody.appendChild(row);
-  }
-
-  pairsTable.appendChild(pairsTableBody);
 };
 
 const fetchPairs = async () => {
@@ -123,10 +213,14 @@ const fetchPairs = async () => {
       const pairs = data.ranges;
       console.log(pairs);
 
-      if (Array.isArray(pairs) && pairs.length <= 0) {
-        document.getElementById('message').textContent = "No pairs retrieved from DB";
+      const messageElement = document.getElementById('message');
+
+      if (!pairs || pairs.length === 0) {
+        messageElement.classList.add('alert', 'alert-info');
+        messageElement.textContent = 'No pairs found.';
       } else {
-        updatePairsTable(pairs);
+        messageElement.textContent = '';
+        createTables(pairs);
       }
     } else {
       console.log('Error fetching pairs');
@@ -136,4 +230,4 @@ const fetchPairs = async () => {
   }
 };
 
-//fetchPairs();
+fetchPairs();

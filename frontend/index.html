@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Ranges</title>
-  <link rel="stylesheet" type="text/css" href="styles.css">
+    <title>Ranges</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.0/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.0/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+  </head>
 </head>
 <body>
-  <h1>Ranges</h1>
-  <div id="pairs-container">
-    <div class="pair">
-      <input type="number" class="first-number" placeholder="First Number">
-      <input type="number" class="second-number" placeholder="Second Number">
-      <!-- <button class="remove-pair" onclick="removePair(this)">-</button> -->
+  <div class="container">
+    <h1>Ranges</h1>
+    <div class="row">
+      <div class="col">
+        <div id="pairs-container">
+          <div class="pair">
+            <input type="text" class="name" placeholder="Name">
+            <input type="number" class="first-number" placeholder="First Number">
+            <input type="number" class="second-number" placeholder="Second Number">
+          </div>
+        </div>
+        <button id="add-pair" class="btn btn-primary">Add Pair</button>
+        <button id="save-ranges" class="btn btn-success">Save Ranges</button>
+      </div>
+      <p id="message"></p>
     </div>
+    <div id="pairs-table-container" class="row"></div>
   </div>
-  <button id="add-pair">Add Pair</button>
-  <button id="save-ranges">Save Ranges</button>
-  <br/>
-  <p id ="message"></p>
-  <table id="pairs-table">
-    <thead>
-      <tr>
-        <th>Pairs</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-    
 
   <script src="script.js"></script>
 </body>
