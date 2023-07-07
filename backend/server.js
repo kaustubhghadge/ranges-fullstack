@@ -11,6 +11,7 @@ mongoose.connect('mongodb+srv://kaustubhghadge:yY7OGipjkNPwJkMX@cluster0.ty55w9c
 const db = mongoose.connection;
 
 // Define a schema for the pairs and ranges
+// Define a schema for the pairs and ranges
 const rangeSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
   pairs: [
@@ -18,8 +19,18 @@ const rangeSchema = new mongoose.Schema({
       pairName: { type: String },
       firstNumber: { type: Number },
       secondNumber: { type: Number },
-      ascendingRange: [{ type: Number }],
-      descendingRange: [{ type: Number }]
+      ascendingRange: [
+        {
+          index: { type: Number },
+          value: { type: Number }
+        }
+      ],
+      descendingRange: [
+        {
+          index: { type: Number },
+          value: { type: Number }
+        }
+      ]
     }
   ]
 });
@@ -54,8 +65,8 @@ app.post('/save-range', async (req, res) => {
       const descendingRange = [];
 
       for (let i = 1; i <= numValues; i++) {
-        ascendingRange.push(x + i * SD);
-        descendingRange.push(y - i * SD);
+        ascendingRange.push({ index: i, value: x + i * SD });
+        descendingRange.push({ index: i, value: y - i * SD });
       }
 
       savedPairs.push({
@@ -75,6 +86,7 @@ app.post('/save-range', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
 
 app.get('/get-ranges', async (req, res) => {
   try {
@@ -105,8 +117,7 @@ app.get('/get-ranges', async (req, res) => {
     if (!range || range.length === 0) {
       return res.json({ ranges: [] });
     }
-
-    res.json({ ranges: range[0].pairs });
+    res.json({ranges: range[0].pairs});
   } catch (error) {
     res.status(500).json({ error: 'Error fetching ranges' });
   }
