@@ -1,7 +1,7 @@
 //http://localhost:3000/
 //https://ranges-fullstack.vercel.app
 
-
+document.addEventListener('DOMContentLoaded', () => {
 const addPair = () => {
   const pairsContainer = document.getElementById('pairs-container');
 
@@ -39,12 +39,19 @@ const addPair = () => {
   pairsContainer.appendChild(pairDiv);
 };
 
-
 const removePair = (pairDiv) => {
   pairDiv.remove();
 };
 
 const saveRanges = async () => {
+  // Show the accordion and expand the first item
+const accordionContainer = document.getElementById('accordionContainer');
+accordionContainer.classList.remove('hidden');
+
+// Expand the first item of the accordion
+const firstCollapse = document.getElementById('repeatedValuesCollapse');
+firstCollapse.classList.add('show');
+
   const pairs = [];
 
   const pairDivs = document.querySelectorAll('.pair');
@@ -75,11 +82,15 @@ const saveRanges = async () => {
       if (response.ok) {
         console.log('Ranges saved successfully');
         fetchPairs();
-        showSuccessMessage('Ranges saved successfully!');
 
         // Remove dynamically created HTML elements
         const pairsContainer = document.getElementById('pairs-container');
-        pairsContainer.innerHTML = '';
+        const pairDivs = pairsContainer.getElementsByClassName('pair');
+
+// Remove all pairDivs except the first one
+while (pairDivs.length > 1) {
+  pairDivs[1].remove();
+}
 
         // Clear input boxes
         const inputBoxes = document.querySelectorAll('input');
@@ -99,23 +110,31 @@ const saveRanges = async () => {
   }
 };
 
-
 const showSuccessMessage = (message) => {
-  const messageElement = document.getElementById('message');
-  messageElement.classList.add('alert', 'alert-success');
-  messageElement.textContent = message;
+  const messageModalLabel = document.getElementById('messageModalLabel');
+  const messageModalText = document.getElementById('messageModalText');
+
+  messageModalLabel.textContent = 'Success';
+  messageModalText.textContent = message;
+
+  $('#messageModal').modal('show');
 };
 
 const showErrorMessage = (message) => {
-  const messageElement = document.getElementById('message');
-  messageElement.classList.add('alert', 'alert-danger');
-  messageElement.textContent = message;
+  const messageModalLabel = document.getElementById('messageModalLabel');
+  const messageModalText = document.getElementById('messageModalText');
+
+  messageModalLabel.textContent = 'Error';
+  messageModalText.textContent = message;
+
+  $('#messageModal').modal('show');
 };
 
 
 document.getElementById('add-pair').addEventListener('click', addPair);
 document.getElementById('save-ranges').addEventListener('click', saveRanges);
 
+/**Table with all values*/
 const createTables = (pairs) => {
   const tableContainer = document.getElementById('pairs-table-container');
   tableContainer.innerHTML = '';
@@ -203,6 +222,137 @@ const createTables = (pairs) => {
     currentRow.appendChild(col);
   });
 };
+const createRepeatedValuesTable = (repeatedValues) => {
+  const tableContainer = document.getElementById('repeated-values-table-container');
+  tableContainer.innerHTML = '';
+
+  const table = document.createElement('table');
+  table.classList.add('table', 'table-bordered');
+  table.id = 'repeated-values-table'; // Assign unique ID to the table
+
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  const columnOneHeader = document.createElement('th');
+  columnOneHeader.textContent = 'Column One';
+  headerRow.appendChild(columnOneHeader);
+  const columnTwoHeader = document.createElement('th');
+  columnTwoHeader.textContent = 'Column Two';
+  headerRow.appendChild(columnTwoHeader);
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+
+  const matchingPairsRow = document.createElement('tr');
+  const matchingPairsColumnOne = document.createElement('td');
+  matchingPairsColumnOne.textContent = 'Matching Pairs:';
+  matchingPairsRow.appendChild(matchingPairsColumnOne);
+  const matchingPairsColumnTwo = document.createElement('td');
+  matchingPairsColumnTwo.id = 'matching-pairs-column';
+  matchingPairsRow.appendChild(matchingPairsColumnTwo);
+  tbody.appendChild(matchingPairsRow);
+
+  const matchingValuesRow = document.createElement('tr');
+  matchingValuesRow.classList.add('matching-values'); // Add the matching-values class to the row
+  const matchingValuesColumnOne = document.createElement('td');
+  matchingValuesColumnOne.textContent = 'Matching Values:';
+  matchingValuesRow.appendChild(matchingValuesColumnOne);
+  const matchingValuesColumnTwo = document.createElement('td');
+  matchingValuesRow.appendChild(matchingValuesColumnTwo);
+  tbody.appendChild(matchingValuesRow);
+
+  const numOfMatchingValuesRow = document.createElement('tr');
+  const numOfMatchingValuesColumnOne = document.createElement('td');
+  numOfMatchingValuesColumnOne.textContent = 'Number of Matching Values:';
+  numOfMatchingValuesRow.appendChild(numOfMatchingValuesColumnOne);
+  const numOfMatchingValuesColumnTwo = document.createElement('td');
+  numOfMatchingValuesColumnTwo.classList.add('number-of-matching-values');
+  numOfMatchingValuesRow.appendChild(numOfMatchingValuesColumnTwo);
+  tbody.appendChild(numOfMatchingValuesRow);
+
+  table.appendChild(tbody);
+  tableContainer.appendChild(table);
+
+  const saveTableContainer = document.createElement('div');
+  saveTableContainer.classList.add('save-table-container');
+
+  const tableTitle = document.createElement('h2');
+  tableTitle.classList.add('editable-title');
+  tableTitle.contentEditable = true; // Enable editing the table title
+  tableTitle.textContent = 'Table Uno'; // Default table title
+  saveTableContainer.appendChild(tableTitle);
+
+  const saveTableName = document.createElement('button');
+  saveTableName.classList.add('btn', 'btn-primary', 'save-table-button');
+  saveTableName.textContent = 'Save Table';
+  saveTableName.addEventListener('click', () => {
+    saveValuesToBackend();
+  });
+  saveTableContainer.appendChild(saveTableName);
+
+  const tableStyle = document.createElement('style');
+  tableStyle.textContent = `
+    .editable-title {
+      display: inline-block;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background-color: #f9f9f9;
+      cursor: text;
+    }
+    .editable-title:focus {
+      outline: none;
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+    }
+    .btn-primary {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .save-table-container {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+  `;
+
+  tableContainer.appendChild(saveTableContainer);
+  tableContainer.appendChild(tableStyle);
+
+  repeatedValues.forEach((item) => {
+    item.pairs.forEach((pair) => {
+      const pairName = pair.name;
+      const numbers = pair.numbers;
+
+      const pairText = document.createElement('span');
+      pairText.textContent = `${pairName} - [${numbers}] `;
+      matchingPairsColumnTwo.appendChild(pairText);
+    });
+
+    const values = item.repeatedValues.map((valueItem) => valueItem.value).join(', ');
+    const valueText = document.createElement('span');
+    valueText.textContent = values;
+    matchingValuesColumnTwo.appendChild(valueText);
+  });
+
+  const numOfMatchingValuesElement = document.querySelector('.number-of-matching-values');
+  numOfMatchingValuesElement.textContent = getTotalMatchingValues(repeatedValues);
+};
+
+
+
+
+const getTotalMatchingValues = (repeatedValues) => {
+  let count = 0;
+  repeatedValues.forEach((item) => {
+    count += item.repeatedValues.length;
+  });
+  return count;
+};
+
 
 const fetchPairs = async () => {
   try {
@@ -211,6 +361,7 @@ const fetchPairs = async () => {
 
     if (response.ok) {
       const pairs = data.ranges;
+      const repeatedValues = data.repeatedValues;
       console.log(data);
 
       const messageElement = document.getElementById('message');
@@ -221,13 +372,65 @@ const fetchPairs = async () => {
       } else {
         messageElement.textContent = '';
         createTables(pairs);
+        createRepeatedValuesTable(repeatedValues);
       }
     } else {
       console.log('Error fetching pairs');
     }
   } catch (error) {
-    console.log('Error:', error.message);
+    console.log('Error:', error);
   }
 };
 
+const saveValuesToBackend = () => {
+  const tableNameElement = document.querySelector('.editable-title');
+  const tableName = tableNameElement.textContent;
+
+
+  const matchingPairsElements = document.querySelectorAll('#matching-pairs-column span');
+  const matchingPairs = Array.from(matchingPairsElements).map((element) => element.textContent);
+
+  const matchingValuesElements = document.querySelectorAll('#repeated-values-table .matching-values span');
+  const matchingValues = [];
+
+matchingValuesElements.forEach((element) => {
+
+  matchingValues.push(element.textContent.trim());
+});
+
+
+  const numberOfMatchingValuesElement = document.querySelector('.number-of-matching-values');
+  const numberOfMatchingValues = parseInt(numberOfMatchingValuesElement.textContent.trim(), 10);
+
+
+  const data = {
+    tableName,
+    matchingPairs,
+    matchingValues,
+    numberOfMatchingValues
+  };
+
+  fetch('https://ranges-fullstack.vercel.app/save-table', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  })
+    .then((response) => {
+      if (response.ok) {
+        console.log('Values saved successfully');
+        showSuccessMessage('Table saved successfully!');
+      } else {
+        console.log('Error saving values');
+        showErrorMessage('Error saving table. Please try again.');
+      }
+    })
+    .catch((error) => {
+      console.log('Error:', error);
+       showErrorMessage('An error occurred. Please try again later.');
+    });
+};
+
 //fetchPairs();
+});

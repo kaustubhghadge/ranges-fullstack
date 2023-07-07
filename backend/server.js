@@ -124,6 +124,34 @@ app.get('/get-ranges', async (req, res) => {
   }
 });
 
+app.post('/save-table', async (req, res) => {
+  try {
+    const tableData = req.body;
+
+    // Extract the required fields from tableData
+    const { tableName, matchingPairs, matchingValues, numberOfMatchingValues } = tableData;
+
+    // Create a new MongoDB collection for the table data
+    const tableCollection = mongoose.connection.db.collection('tables');
+
+    // Create a new document to store the table data
+    const tableDocument = {
+      tableName,
+      matchingPairs,
+      matchingValues,
+      numberOfMatchingValues
+    };
+
+    // Save the table document to the collection
+    await tableCollection.insertOne(tableDocument);
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error saving table' });
+  }
+});
+
+
 function findRepeatedValues(data) {
   const repeatedValues = [];
 
