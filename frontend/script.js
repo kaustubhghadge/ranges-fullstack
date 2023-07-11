@@ -44,14 +44,6 @@ const removePair = (pairDiv) => {
 };
 
 const saveRanges = async () => {
-  // Show the accordion and expand the first item
-const accordionContainer = document.getElementById('accordionContainer');
-accordionContainer.classList.remove('hidden');
-
-// Expand the first item of the accordion
-const firstCollapse = document.getElementById('repeatedValuesCollapse');
-firstCollapse.classList.add('show');
-
   const pairs = [];
 
   const pairDivs = document.querySelectorAll('.pair');
