@@ -39,6 +39,7 @@ const Range = mongoose.model('Range', rangeSchema);
 
 // Define a schema for the table data
 const tableSchema = new mongoose.Schema({
+  timestamp: { type: Date, default: Date.now },
   tableName: String,
   matchingPairs: [String],
   matchingValues: [String],
@@ -201,13 +202,13 @@ function findRepeatedValues(data) {
 
       const repeatedAscending = currentRange.ascendingRange.filter(currentObj =>
         comparedRange.ascendingRange.some(comparedObj =>
-          comparedObj.value === currentObj.value
+          Math.abs(comparedObj.value - currentObj.value) <= 0.75
         )
       );
 
       const repeatedDescending = currentRange.descendingRange.filter(currentObj =>
         comparedRange.descendingRange.some(comparedObj =>
-          comparedObj.value === currentObj.value
+          Math.abs(comparedObj.value - currentObj.value) <= 0.75
         )
       );
 
@@ -218,11 +219,11 @@ function findRepeatedValues(data) {
         };
 
         for (const valueObj of repeatedAscending) {
-          repeatedInfo.repeatedValues.push({ index:valueObj.index, value: valueObj.value });
+          repeatedInfo.repeatedValues.push({ index: valueObj.index, value: valueObj.value });
         }
 
         for (const valueObj of repeatedDescending) {
-          repeatedInfo.repeatedValues.push({ index:valueObj.index, value: valueObj.value });
+          repeatedInfo.repeatedValues.push({ index: valueObj.index, value: valueObj.value });
         }
 
         const pair1 = {
