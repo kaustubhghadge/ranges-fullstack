@@ -37,6 +37,17 @@ const rangeSchema = new mongoose.Schema({
 // Create a model based on the schema
 const Range = mongoose.model('Range', rangeSchema);
 
+// Define a schema for the table data
+const tableSchema = new mongoose.Schema({
+  tableName: String,
+  matchingPairs: [String],
+  matchingValues: [String],
+  numberOfMatchingValues: Number
+});
+
+// Create a model based on the schema for the "tables" collection
+const Table = mongoose.model('Table', tableSchema);
+
 // Endpoint to save the range
 app.post('/save-range', async (req, res) => {
   try {
@@ -124,6 +135,7 @@ app.get('/get-ranges', async (req, res) => {
   }
 });
 
+// Endpoint to save the table
 app.post('/save-table', async (req, res) => {
   try {
     const tableData = req.body;
@@ -131,23 +143,49 @@ app.post('/save-table', async (req, res) => {
     // Extract the required fields from tableData
     const { tableName, matchingPairs, matchingValues, numberOfMatchingValues } = tableData;
 
-    // Create a new MongoDB collection for the table data
-    const tableCollection = mongoose.connection.db.collection('tables');
-
     // Create a new document to store the table data
-    const tableDocument = {
+    const tableDocument = new Table({
       tableName,
       matchingPairs,
       matchingValues,
       numberOfMatchingValues
-    };
+    });
 
     // Save the table document to the collection
-    await tableCollection.insertOne(tableDocument);
+    await tableDocument.save();
 
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Error saving table' });
+  }
+});
+
+// Endpoint to get the latest document
+app.get('/latest-document', async (req, res) => {
+  try {
+    const latestTable = await Table.findOne()
+      .sort({ _id: -1 })
+      .limit(1);
+
+    if (!latestTable) {
+      return res.json({ document: null });
+    }
+
+    const savedTable = {
+      tableName: latestTable.tableName,
+      pairs: latestTable.matchingPairs.map(pair => {
+        const [name, numbers] = pair.split(' - ');
+        return {
+          name: name.trim(),
+          numbers: numbers.trim()
+        };
+      }),
+      matchingValues: latestTable.matchingValues.map(values => values.trim())
+    };
+
+    res.json({ savedTable });
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching the latest document' });
   }
 });
 
