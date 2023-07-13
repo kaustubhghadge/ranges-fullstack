@@ -314,6 +314,9 @@ const createRepeatedValuesTable = (repeatedValues) => {
   tableContainer.appendChild(saveTableContainer);
   tableContainer.appendChild(tableStyle);
 
+  const horizontalLine = document.createElement('hr');
+  tableContainer.appendChild(horizontalLine);
+
   repeatedValues.forEach((item) => {
     item.pairs.forEach((pair) => {
       const pairName = pair.name;
@@ -334,9 +337,6 @@ const createRepeatedValuesTable = (repeatedValues) => {
   numOfMatchingValuesElement.textContent = getTotalMatchingValues(repeatedValues);
 };
 
-
-
-
 const getTotalMatchingValues = (repeatedValues) => {
   let count = 0;
   repeatedValues.forEach((item) => {
@@ -354,6 +354,7 @@ const fetchPairs = async () => {
     if (response.ok) {
       const pairs = data.ranges;
       const repeatedValues = data.repeatedValues;
+      console.log("These are all the values pulled from fetchPairs function");
       console.log(data);
 
       const messageElement = document.getElementById('message');
@@ -378,22 +379,18 @@ const saveValuesToBackend = () => {
   const tableNameElement = document.querySelector('.editable-title');
   const tableName = tableNameElement.textContent;
 
-
   const matchingPairsElements = document.querySelectorAll('#matching-pairs-column span');
   const matchingPairs = Array.from(matchingPairsElements).map((element) => element.textContent);
 
   const matchingValuesElements = document.querySelectorAll('#repeated-values-table .matching-values span');
-  const matchingValues = [];
-
-matchingValuesElements.forEach((element) => {
-
-  matchingValues.push(element.textContent.trim());
-});
-
+  const matchingValues = Array.from(matchingValuesElements).flatMap((element) => {
+    const values = element.textContent.trim().split(',').map((value) => parseFloat(value.trim()));
+    console.log(values);
+    return values;
+  });
 
   const numberOfMatchingValuesElement = document.querySelector('.number-of-matching-values');
   const numberOfMatchingValues = parseInt(numberOfMatchingValuesElement.textContent.trim(), 10);
-
 
   const data = {
     tableName,
@@ -413,6 +410,11 @@ matchingValuesElements.forEach((element) => {
       if (response.ok) {
         console.log('Values saved successfully');
         showSuccessMessage('Table saved successfully!');
+
+        const tableContainer = document.getElementById('pairs-table-container');
+        tableContainer.classList.add('.d-none');
+        fetchSavedTables();
+
       } else {
         console.log('Error saving values');
         showErrorMessage('Error saving table. Please try again.');
@@ -424,5 +426,222 @@ matchingValuesElements.forEach((element) => {
     });
 };
 
-//fetchPairs();
+ // Helper function to get the key of the latest table based on timestamp
+ const getLatestTableKey = (tables) => {
+  let latestTimestamp = null;
+  let latestTableKey = null;
+  for (const tableKey in tables) {
+    const table = tables[tableKey];
+    if (!latestTimestamp || table.timestamp > latestTimestamp) {
+      latestTimestamp = table.timestamp;
+      latestTableKey = tableKey;
+    }
+  }
+  return latestTableKey;
+};
+
+
+
+const createSavedTable = (tables) => {
+  const tableContainer = document.getElementById('saved-tables');
+  tableContainer.innerHTML = '';
+
+  const dropdownContainer = document.getElementById('dropdown-container');
+  const dropdownMenu = document.getElementById('dropdown-menu');
+
+  // Clear existing dropdown menu items
+  dropdownMenu.innerHTML = '';
+
+
+  // Populate dropdown menu with items
+  for (const tableKey in tables) {
+    const table = tables[tableKey];
+    const dropdownItem = document.createElement('li');
+    dropdownItem.innerHTML = `<a class="dropdown-item" href="#" data-table-key="${tableKey}">${table.tableName}</a>`;
+    dropdownMenu.appendChild(dropdownItem);
+  }
+
+ // Show the dropdown container
+ dropdownContainer.classList.remove('d-none');
+
+ // Add event listener to dropdown items
+ dropdownMenu.addEventListener('click', (event) => {
+  event.preventDefault();
+  const selectedTableKey = event.target.getAttribute('data-table-key');
+  if (selectedTableKey) {
+    const selectedTable = tables[selectedTableKey];
+    showTable(selectedTable);
+  }
 });
+
+  dropdownContainer.appendChild(dropdownMenu);
+
+  // tableContainer.appendChild(dropdownContainer);
+
+  // Function to show the selected table
+  const showTable = (tableData) => {
+
+    tableContainer.innerHTML = '';
+  
+    const tableTitle = document.createElement('h5');
+    tableTitle.textContent = tableData.tableName;
+    tableContainer.appendChild(tableTitle);
+  
+    const table = document.createElement('table');
+    //add table id here with the id that we get from tableData
+    table.setAttribute("id", tableData.id);
+    table.classList.add('table', 'table-bordered', 'saved-table');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const columnOneHeader = document.createElement('th');
+    columnOneHeader.textContent = 'Column One';
+    headerRow.appendChild(columnOneHeader);
+    const columnTwoHeader = document.createElement('th');
+    columnTwoHeader.textContent = 'Column Two';
+    headerRow.appendChild(columnTwoHeader);
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+  
+    const tbody = document.createElement('tbody');
+  
+    const matchingPairsRow = document.createElement('tr');
+    const matchingPairsColumnOne = document.createElement('td');
+    matchingPairsColumnOne.textContent = 'Matching Pairs:';
+    matchingPairsRow.appendChild(matchingPairsColumnOne);
+    const matchingPairsColumnTwo = document.createElement('td');
+    matchingPairsColumnTwo.id = 'matching-pairs-columns';
+    matchingPairsRow.appendChild(matchingPairsColumnTwo);
+    tbody.appendChild(matchingPairsRow);
+  
+    const matchingValuesRow = document.createElement('tr');
+    matchingValuesRow.classList.add('matching-values'); // Add the matching-values class to the row
+    const matchingValuesColumnOne = document.createElement('td');
+    matchingValuesColumnOne.textContent = 'Matching Values:';
+    matchingValuesRow.appendChild(matchingValuesColumnOne);
+    const matchingValuesColumnTwo = document.createElement('td');
+    matchingValuesColumnTwo.id = 'matching-values-columns';
+  
+    matchingValuesRow.appendChild(matchingValuesColumnTwo);
+    tbody.appendChild(matchingValuesRow);
+  
+    const numOfMatchingValuesRow = document.createElement('tr');
+    const numOfMatchingValuesColumnOne = document.createElement('td');
+    numOfMatchingValuesColumnOne.textContent = 'Number of Matching Values:';
+    numOfMatchingValuesRow.appendChild(numOfMatchingValuesColumnOne);
+    const numOfMatchingValuesColumnTwo = document.createElement('td');
+    numOfMatchingValuesColumnTwo.classList.add('total-number-of-matching-values');
+    numOfMatchingValuesRow.appendChild(numOfMatchingValuesColumnTwo);
+    tbody.appendChild(numOfMatchingValuesRow);
+  
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+  
+    // Populate table with data (matching pairs and matching values)
+    const matchingPairsColumnTwoData = document.getElementById('matching-pairs-columns');
+    tableData.pairs.forEach((pair) => {
+      const pairText = document.createElement('span');
+      pairText.textContent = `${pair.name} - ${pair.numbers} `;
+      matchingPairsColumnTwoData.appendChild(pairText);
+    });
+  
+    const matchingValuesColumnTwoData = document.querySelector('#matching-values-columns');
+    const values = tableData.matchingValues.map((val) => parseFloat(val))
+    values.forEach((val) => {
+      matchingValuesColumnTwoData.textContent = values.join(', ');
+    });
+    
+  
+    const numOfMatchingValuesElement = document.querySelector('.total-number-of-matching-values');
+    numOfMatchingValuesElement.textContent = values.length
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.classList.add('d-flex', 'justify-content-between', 'mt-3');
+
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.classList.add('btn', 'btn-danger');
+    deleteButton.addEventListener('click', () => {
+
+      /**Using below method to get the id of the table because, only one table is shown on the HTML as the table has to be selected from the dropdown list. If in the future we were to show all the tables on HTML list and wanted to delete one of the table, then below logic would fail */
+      const t = document.querySelectorAll('table.saved-table');
+      deleteTable(t[0].id);
+    });
+    buttonContainer.appendChild(deleteButton);
+
+    const compareButton = document.createElement('button');
+    compareButton.textContent = 'Compare';
+    compareButton.classList.add('btn', 'btn-primary');
+    compareButton.addEventListener('click', () => {
+      // Add your functionality for the compare button here
+      // This event listener can be modified based on your requirements
+      showErrorMessage("This functionality is still a work in progress");
+    });
+    buttonContainer.appendChild(compareButton);
+
+    tableContainer.appendChild(buttonContainer);
+  };
+
+  //Show the latest table by default
+  // const latestTableKey = getLatestTableKey(tables);
+  // if (latestTableKey) {
+  //   const latestTable = tables[latestTableKey];
+  //   const title = document.createElement('h5');
+  //   title.textContent = 'Latest Table';
+  //   showTable(latestTable);
+  //   dropdownButton.textContent = latestTable.tableName;
+  //   dropdownButton.classList.add('active');
+  // }
+};
+
+const deleteTable = async (id) => {
+  try {
+    const response = await fetch('http://localhost:3000/delete-table', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id })
+    });
+
+    if (response.ok) {
+      console.log('Table deleted successfully');
+      fetchSavedTables();
+    } else {
+      console.log('Error deleting table');
+      showErrorMessage('Error deleting table. Please try again.');
+    }
+  } catch (error) {
+    console.log('Error:', error);
+    showErrorMessage('An error occurred. Please try again later.');
+  }
+};
+
+
+const fetchSavedTables = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/saved-tables');
+    const data = await response.json();
+
+    console.log(data);
+
+    if (data && data.tables) {
+      createSavedTable(data.tables);
+    } else {
+      console.log('Invalid data format');
+    }
+
+    
+    } 
+   catch (error) {
+    console.log('Error:', error);
+  }
+};
+
+
+fetchSavedTables().then(() => {
+  const dropdownContainer = document.getElementById('dropdown-container');
+  dropdownContainer.classList.remove('d-none');
+});
+});
+
+//fetchPairs()

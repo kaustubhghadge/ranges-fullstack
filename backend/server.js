@@ -114,6 +114,7 @@ app.get('/get-ranges', async (req, res) => {
               input: "$pairs",
               as: "pair",
               in: {
+                id: "$$pair._id",
                 pairName: "$$pair.pairName",
                 firstNumber: "$$pair.firstNumber",
                 secondNumber: "$$pair.secondNumber",
@@ -162,29 +163,32 @@ app.post('/save-table', async (req, res) => {
 });
 
 // Endpoint to get the latest document
-app.get('/latest-document', async (req, res) => {
+app.get('/saved-tables', async (req, res) => {
   try {
-    const latestTable = await Table.findOne()
-      .sort({ _id: -1 })
-      .limit(1);
+    const allTables = await Table.find().sort({ _id: -1 });
 
-    if (!latestTable) {
-      return res.json({ document: null });
+    if (allTables.length === 0) {
+      return res.json({ tables: {} });
     }
-
-    const savedTable = {
-      tableName: latestTable.tableName,
-      pairs: latestTable.matchingPairs.map(pair => {
-        const [name, numbers] = pair.split(' - ');
-        return {
-          name: name.trim(),
-          numbers: numbers.trim()
-        };
-      }),
-      matchingValues: latestTable.matchingValues.map(values => values.trim())
-    };
-
-    res.json({ savedTable });
+    
+    const tablesObject = {};
+    allTables.forEach((table, index) => {
+      tablesObject[`table${index + 1}`] = {
+        id:table._id,
+        tableName: table.tableName,
+        pairs: table.matchingPairs.map(pair => {
+          const [name, numbers] = pair.split(' - ');
+          return {
+            name: name.trim(),
+            numbers: numbers.trim()
+          };
+        }),
+        matchingValues: table.matchingValues.map(values => values.trim()),
+        timestamp: table.timestamp
+      };
+    });
+    
+    res.json({ tables: tablesObject });
   } catch (error) {
     res.status(500).json({ error: 'Error fetching the latest document' });
   }
@@ -227,11 +231,13 @@ function findRepeatedValues(data) {
         }
 
         const pair1 = {
+          id: currentRange.id,
           name: currentRange.pairName,
           numbers: `${currentRange.firstNumber}, ${currentRange.secondNumber}`
         };
 
         const pair2 = {
+          id: comparedRange.id,
           name: comparedRange.pairName,
           numbers: `${comparedRange.firstNumber}, ${comparedRange.secondNumber}`
         };
@@ -246,6 +252,20 @@ function findRepeatedValues(data) {
 
   return repeatedValues;
 }
+
+app.post('/delete-table', async (req, res) => {
+  try {
+    const id = req.body.id;
+    const result = await Table.findByIdAndDelete(id);
+    if (result){
+      res.status(200).json({ok:"Table Deleted"})
+    }
+  }
+  catch(error){
+    res.status(500).json({ error: 'Error deleting the table' });
+  }
+})
+
 
 // Start the server
 const port = process.env.PORT || 3000;
