@@ -595,7 +595,7 @@ const createSavedTable = (tables) => {
 
 const deleteTable = async (id) => {
   try {
-    const response = await fetch('http://localhost:3000/delete-table', {
+    const response = await fetch('https://ranges-fullstack.vercel.app/delete-table', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -619,7 +619,7 @@ const deleteTable = async (id) => {
 
 const fetchSavedTables = async () => {
   try {
-    const response = await fetch('http://localhost:3000/saved-tables');
+    const response = await fetch('https://ranges-fullstack.vercel.app/saved-tables');
     const data = await response.json();
 
     console.log(data);
