@@ -679,7 +679,7 @@ function isTablePopulated() {
 
 const compareTables = async (tableName) => {
   try {
-    const response = await fetch('http://localhost:3000/compare', {method: 'POST',
+    const response = await fetch('https://ranges-fullstack.vercel.app/compare', {method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
