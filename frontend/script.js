@@ -79,10 +79,10 @@ const saveRanges = async () => {
         const pairsContainer = document.getElementById('pairs-container');
         const pairDivs = pairsContainer.getElementsByClassName('pair');
 
-// Remove all pairDivs except the first one
-while (pairDivs.length > 1) {
-  pairDivs[1].remove();
-}
+        // Remove all pairDivs except the first one
+        while (pairDivs.length > 1) {
+          pairDivs[1].remove();
+        }
 
         // Clear input boxes
         const inputBoxes = document.querySelectorAll('input');
@@ -275,6 +275,7 @@ const createRepeatedValuesTable = (repeatedValues) => {
   saveTableContainer.appendChild(tableTitle);
 
   const saveTableName = document.createElement('button');
+  saveTableName.setAttribute("id", "save-button");
   saveTableName.classList.add('btn', 'btn-primary', 'save-table-button');
   saveTableName.textContent = 'Save Table';
   saveTableName.addEventListener('click', () => {
@@ -413,6 +414,9 @@ const saveValuesToBackend = () => {
 
         const tableContainer = document.getElementById('pairs-table-container');
         tableContainer.classList.add('.d-none');
+        const savedTable = document.getElementById('save-button')
+        savedTable.classList.add('d-none')
+
         fetchSavedTables();
 
       } else {
@@ -484,6 +488,7 @@ const createSavedTable = (tables) => {
     tableContainer.innerHTML = '';
   
     const tableTitle = document.createElement('h5');
+    tableTitle.setAttribute("id","table-name");
     tableTitle.textContent = tableData.tableName;
     tableContainer.appendChild(tableTitle);
   
@@ -569,12 +574,23 @@ const createSavedTable = (tables) => {
     buttonContainer.appendChild(deleteButton);
 
     const compareButton = document.createElement('button');
+    compareButton.setAttribute("id", "compare-button");
     compareButton.textContent = 'Compare';
-    compareButton.classList.add('btn', 'btn-primary');
+    compareButton.classList.add('btn', 'btn-primary','d-none');
+
+    if(isTablePopulated()){
+      compareButton.classList.remove('d-none');
+    }
     compareButton.addEventListener('click', () => {
       // Add your functionality for the compare button here
       // This event listener can be modified based on your requirements
-      showErrorMessage("This functionality is still a work in progress");
+
+      const tableName = document.getElementById('table-name');
+      const name = tableName.textContent;
+      compareTables(name);
+      
+
+      // showErrorMessage("This functionality is still a work in progress");
     });
     buttonContainer.appendChild(compareButton);
 
@@ -643,5 +659,112 @@ fetchSavedTables().then(() => {
   dropdownContainer.classList.remove('d-none');
 });
 });
+
+function isTablePopulated() {
+  // Get the reference to the table element
+  var table = document.getElementById('pairs-table-container').querySelector('table');
+  if(table){
+    // Check if the table has any rows
+    if (table.rows.length > 0) {
+      // The table is populated
+      return true;
+    } else {
+      // The table is empty
+      return false;
+    }
+}
+ 
+}
+
+
+const compareTables = async (tableName) => {
+  try {
+    const response = await fetch('http://localhost:3000/compare', {method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ tableName: tableName })
+  });
+    const data = await response.json();
+
+    showComparisonResultsTable(data);
+    
+    } 
+   catch (error) {
+    console.log('Error:', error);
+  }
+};
+
+const showComparisonResultsTable = (tableData) =>{
+  // Get the reference to the div element
+const divElement = document.getElementById('comparison-results');
+
+// Create the h4 element for "Comparison Results"
+const h4Element = document.createElement('h4');
+h4Element.textContent = 'Comparison Results';
+
+// Create the table element
+const tableElement = document.createElement('table');
+tableElement.classList.add('table', 'table-bordered');
+
+// Create the table header
+const theadElement = document.createElement('thead');
+const headerRow = document.createElement('tr');
+const columnOneHeader = document.createElement('th');
+columnOneHeader.textContent = 'Tables Compared';
+const columnTwoHeader = document.createElement('th');
+columnTwoHeader.textContent = 'Pairs Compared';
+const columnThreeHeader = document.createElement('th');
+columnThreeHeader.textContent = 'Common Values';
+headerRow.appendChild(columnOneHeader);
+headerRow.appendChild(columnTwoHeader);
+headerRow.appendChild(columnThreeHeader);
+theadElement.appendChild(headerRow);
+
+// Create the table body
+const tbodyElement = document.createElement('tbody');
+
+// Get the data from the backend
+const data = tableData;
+
+// Extract the data from the backend response
+const tablesCompared = data.tablesCompared;
+const pairNames = data.pairNames;
+const commonValues = data.commonValues;
+// Create the row for "Tables Compared"
+const tablesComparedRow = document.createElement('tr');
+const tablesComparedCell = document.createElement('td');
+tablesComparedCell.textContent = `${tablesCompared.latestTable}\n and${tablesCompared.specifiedTable}`;
+tablesComparedRow.appendChild(tablesComparedCell);
+
+// Create the cell for "Pairs Compared"
+const pairNamesLatestTableCell = document.createElement('td');
+const pairNamesSpecifiedTableCell = document.createElement('td');
+const pairNamesLatestTable = pairNames.latestTable;
+const pairNamesSpecifiedTable = pairNames.specifiedTable;
+
+pairNamesLatestTableCell.textContent = pairNamesLatestTable.join(', ');
+pairNamesSpecifiedTableCell.textContent = pairNamesSpecifiedTable.join(', ');
+
+// Create the cell for "Common Values"
+const commonValuesCell = document.createElement('td');
+commonValuesCell.textContent = commonValues.join(', ');
+
+// Append the cells to the row
+tablesComparedRow.appendChild(pairNamesLatestTableCell);
+tablesComparedRow.appendChild(commonValuesCell);
+
+// Append the row to the table body
+tbodyElement.appendChild(tablesComparedRow);
+
+// Add the elements to the table
+tableElement.appendChild(theadElement);
+tableElement.appendChild(tbodyElement);
+
+// append the h4 and table to divelement
+divElement.appendChild(h4Element);
+divElement.appendChild(tableElement);
+}
+
 
 //fetchPairs()

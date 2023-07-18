@@ -266,6 +266,53 @@ app.post('/delete-table', async (req, res) => {
   }
 })
 
+// Endpoint to compare the matchingValues of the latest two documents
+app.post('/compare', async (req, res) => {
+  try {
+    const { tableName } = req.body;
+
+    // Find the latest table in the "tables" collection
+    const latestTable = await Table.findOne()
+      .sort({ timestamp: -1 })
+      .lean();
+
+    if (!latestTable) {
+      return res.status(400).json({ message: 'No tables found' });
+    }
+
+    // Find the specified table by tableName
+    const specifiedTable = await Table.findOne({ tableName }).lean();
+
+    if (!specifiedTable) {
+      return res.status(404).json({ message: 'Specified table not found' });
+    }
+
+    const values1 = latestTable.matchingValues;
+    const values2 = specifiedTable.matchingValues;
+
+    // Find the common values
+    const commonValues = values1.filter(value => values2.includes(value));
+
+    const report = {
+      tablesCompared: {
+        latestTable: latestTable.tableName,
+        specifiedTable: specifiedTable.tableName
+      },
+      pairNames: {
+        latestTable: latestTable.matchingPairs,
+        specifiedTable: specifiedTable.matchingPairs
+      },
+      commonValues
+    };
+
+    return res.json(report);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
 
 // Start the server
 const port = process.env.PORT || 3000;
